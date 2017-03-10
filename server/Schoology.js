@@ -3,6 +3,7 @@
 const request = require('request');
 const qs = require('querystring');
 
+const SCHOOLOGY_BASE = 'https://www.schoology.com/';
 const API_BASE = 'https://api.schoology.com/v1';
 
 class Schoology {
@@ -34,7 +35,7 @@ class Schoology {
         oauth_callback: this.oauth.callback,
         oauth_token: token.oauth_token,
       };
-      return `${API_BASE}/oauth/authorize?` + qs.stringify(query);
+      return `${SCHOOLOGY_BASE}/oauth/authorize?` + qs.stringify(query);
     });
   }
 }

@@ -5,12 +5,13 @@
   "author": "nathanhleung",
   "license": "MIT",
   "scripts": {
-    "start": "node index"
+    "start": "node server/index"
   },
   "dependencies": {
     "dotenv": "^4.0.0",
     "express": "^4.14.0",
     "morgan": "^1.7.0",
+    "pg": "^6.1.4",
     "querystring": "^0.2.0",
     "request": "^2.78.0"
   }
