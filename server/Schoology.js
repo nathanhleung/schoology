@@ -3,18 +3,19 @@
 const request = require('request');
 const qs = require('querystring');
 
-const SCHOOLOGY_BASE = 'https://www.schoology.com/';
+const SCHOOLOGY_BASE = 'https://wsdweb.schoology.com';
 const API_BASE = 'https://api.schoology.com/v1';
 
 class Schoology {
   constructor({ callback, consumer_key, consumer_secret }) {
+    this.callback = callback;
     this.oauth = {
-      callback,
+      realm: 'Schoology API',
       consumer_key,
       consumer_secret,
     };
   }
-  _getToken() {
+  _getRequestToken() {
     return new Promise((resolve, reject) => {
       request({
         url: `${API_BASE}/oauth/request_token`,
@@ -29,13 +30,74 @@ class Schoology {
       });
     });
   }
-  getAuthorizeURL() {
-    return this._getToken().then((token) => {
-      const query = {
-        oauth_callback: this.oauth.callback,
-        oauth_token: token.oauth_token,
-      };
-      return `${SCHOOLOGY_BASE}/oauth/authorize?` + qs.stringify(query);
+  _makeAuthorizeURL(token) {
+    const query = {
+      oauth_callback: this.callback,
+      oauth_token: token.oauth_token,
+    };
+    return Promise.resolve(`${SCHOOLOGY_BASE}/oauth/authorize?${qs.stringify(query)}`);
+  }
+  getAuthorizeData() {
+    let reqToken;
+    return this._getRequestToken()
+      .then((token) => {
+        reqToken = token;
+        return token;
+      })
+      .then(this._makeAuthorizeURL.bind(this))
+      .then((url) => {
+        return {
+          token: reqToken,
+          url,
+        };
+      });
+  }
+  getAccessToken(token, token_secret) {
+    return new Promise((resolve, reject) => {
+      request({
+        url: `${API_BASE}/oauth/access_token`,
+        oauth: Object.assign({}, this.oauth, {
+          token,
+          token_secret,
+        }),
+      }, (err, response, body) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(qs.parse(body));
+      });
+    });
+  }
+  getMe(accessToken, accessSecret) {
+    return new Promise((resolve, reject) => {
+      request({
+        url: `${API_BASE}/users/me`,
+        oauth: Object.assign({}, this.oauth, {
+          token: accessToken,
+          token_secret: accessSecret,
+        }),
+      }, (err, response, body) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(body);
+      });
+    });
+  }
+  getGrades(id, accessToken, accessSecret) {
+    return new Promise((resolve, reject) => {
+      request({
+        url: `${API_BASE}/users/${id}/grades`,
+        oauth: Object.assign({}, this.oauth, {
+          token: accessToken,
+          token_secret: accessSecret,
+        }),
+      }, (err, response, body) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(body);
+      });
     });
   }
 }
