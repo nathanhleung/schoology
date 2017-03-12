@@ -1,48 +1,75 @@
 const db = require('./db.js');
 
-function dropUserTable(cb) {
-  db.query(`DROP TABLE users;`, [], cb);
-}
-
-function createUserTable(cb) {
-  db.query(`CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username text NOT NULL UNIQUE,
-    password text NOT NULL,
-    schoology_id integer,
-    schoology_oauth_token text,
-    schoology_oauth_token_secret text,
-    schoology_access_token_key text,
-    schoology_access_token_secret text
-  );`, [], cb);
+/**
+ * Converts a schema object to an SQL query
+ * @param schema {object} - the schema to convert
+ */
+function schemaToQuery(schema) {
+  const keys = Object.keys(schema);
+  const noComma = keys.length - 1;
+  // Prepend id field
+  let finalQuery = 'id SERIAL PRIMARY KEY,\n';
+  // Make query from schema
+  finalQuery += keys.reduce((query, key, i) => {
+    let next = '';
+    // Construct query in the form of id SERIAL PRIMARY KEY, etc.
+    next += `${key} ${schema[key]}`;
+    // If we're not on the last key, add a comma
+    if (i !== noComma) {
+      next += ',\n';
+    }
+    return query + next;
+  }, '');
+  return finalQuery;
 }
 
 /**
- * @todo make a user schema since this depends on arg passed
- * also the preprocessing before calling the cb is dangerous
- * what if result.rows is undefined?
- * it only happens when result is undefined though (the error)
+ * Creates a table
+ * @param name {string} - the name of the table
+ * @param schema {object} - the schema object for the table
  */
-function createUser(options, cb) {
+function createTable(name, schema, cb) {
+  db.query(`CREATE TABLE IF NOT EXISTS $1 (
+    $2
+  );`, [name, schemaToQuery(schema)], cb);
+}
+
+/**
+ * Drops a table
+ * @param name {string} - the name of the table to drop
+ */
+function dropTable(name, cb) {
+  db.query('DROP TABLE $1;', [name], cb);
+}
+
+function makeVariablesRange(max) {
+  let range = '';
+  for (let i = 1; i <= max; i += 1) {
+    /* eslint-disable prefer-template */
+    range += '$' + i;
+    /* eslint-enable prefer-template */
+  }
+  return range;
+}
+
+function createUser(user, cb) {
+  const schema = user.constructor.schema;
+  // Order of keys isn't guaranteed, so establish
+  // order here
+  const keys = Object.keys(schema);
+  const values = keys.map(key => user[key]);
   db.query(`
     INSERT into users(
-      ${Object.keys(options).join(',')}
+      ${keys.join(',')}
     )
-    VALUES ($1, $2, $3, $4, $5, $6)
+    VALUES (${makeVariablesRange(schema.length)})
     RETURNING *;
-  `, [
-    options.username,
-    options.password,
-    options.schoology_oauth_token,
-    options.schoology_oauth_token_secret,
-    options.schoology_access_token_key,
-    options.schoology_access_token_secret,
-  ], (err, result) => {
+  `, values, (err, result) => {
     cb(err, result.rows[0]);
   });
 }
 
-function updateUser(id, options) {
+function updateUser(id, user) {
   return new Promise((resolve, reject) => {
     db.query(`
       UPDATE users SET (
@@ -67,8 +94,8 @@ function updateUser(id, options) {
   });
 }
 
-function showUsers(cb) {
-  db.query('SELECT * FROM users;', [], (err, result) => {
+function showRows(table, cb) {
+  db.query('SELECT * FROM $1;', [table], (err, result) => {
     cb(err, result.rows);
   });
 }
@@ -86,10 +113,11 @@ function getUserById(id, cb) {
 }
 
 module.exports = {
-  dropUserTable,
-  createUserTable,
+  dropTable,
+  createTable,
   createUser,
   showUsers,
   getUserById,
   updateUser,
+  schemaToQuery,
 };
