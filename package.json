@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "start": "node server/index",
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc"
   },
   "dependencies": {
     "dotenv": "^4.0.0",
@@ -14,15 +15,14 @@
     "morgan": "^1.7.0",
     "pg": "^6.1.4",
     "querystring": "^0.2.0",
-    "request": "^2.78.0"
+    "request": "^2.78.0",
+    "tslint": "^5.0.0"
   },
   "devDependencies": {
-    "eslint": "3.15.0",
-    "eslint-config-airbnb": "^14.1.0",
-    "eslint-plugin-jsx-a11y": "4.0.0",
-    "eslint-plugin-import": "2.2.0",
-    "eslint-plugin-jest": "^19.0.1",
-    "eslint-plugin-react": "6.9.0",
-    "jest": "^19.0.2"
+    "@types/dotenv": "^2.0.20",
+    "@types/express": "^4.0.35",
+    "@types/morgan": "^1.7.32",
+    "@types/node": "^7.0.12",
+    "typescript": "^2.2.2"
   }
 }

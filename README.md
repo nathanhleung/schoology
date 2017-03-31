@@ -1,6 +1,9 @@
 # Schoology
 i want to check my grades faster
 
+## start
+- `npm start` or `nodemon`
+
 ## todo
 - set up postgres
 - look over the [documentation](https://developers.schoology.com/api-documentation/authentication)

@@ -1,11 +1,11 @@
 require('dotenv').config();
 
-const express = require('express');
-const logger = require('morgan');
-const path = require('path');
+import * as express from 'express';
+import * as logger from 'morgan';
+import * as path from 'path';
 
-const setup = require('./db/helpers');
-const helpers = require('./helpers');
+import * as setup from './db/helpers';
+import * as helpers from './helpers';
 
 const app = express();
 
@@ -16,7 +16,8 @@ app.use(express.static(path.join(__dirname, '..', 'client'), {
 }));
 
 app.get('/get-url', (req, res) => {
-  let token, authorizeUrl;
+  let token: String;
+  let authorizeUrl: String;
   helpers.getAuthorizeURL()
     .then((result) => {
       token = result.token;

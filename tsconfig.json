@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "removeComments": true,
+    "rootDir": "server",
+    "outDir": "_build_server"
+  },
+  "include": [
+    "server/**/*"
+  ]
+}

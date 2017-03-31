@@ -2,15 +2,15 @@ const db = require('./db.js');
 
 /**
  * Converts a schema object to an SQL query
- * @param schema {object} - the schema to convert
+ * @param schema {Model} - the schema to convert
+ * @return query - the schema turned into a query object for table creation
  */
 function schemaToQuery(schema) {
   const keys = Object.keys(schema);
+  // Don't add a comma after the last key
   const noComma = keys.length - 1;
-  // Prepend id field
-  let finalQuery = 'id SERIAL PRIMARY KEY,\n';
   // Make query from schema
-  finalQuery += keys.reduce((query, key, i) => {
+  const query = keys.reduce((accumulator, key, i) => {
     let next = '';
     // Construct query in the form of id SERIAL PRIMARY KEY, etc.
     next += `${key} ${schema[key]}`;
@@ -18,9 +18,9 @@ function schemaToQuery(schema) {
     if (i !== noComma) {
       next += ',\n';
     }
-    return query + next;
+    return accumulator + next;
   }, '');
-  return finalQuery;
+  return query;
 }
 
 /**
@@ -42,6 +42,11 @@ function dropTable(name, cb) {
   db.query('DROP TABLE $1;', [name], cb);
 }
 
+/**
+ * Makes a range of variables for variable interpolation
+ * @param max - the maxfor the range (starts at 1)
+ * @return range - the range of variables (i.e. $1 $2 $3)
+ */
 function makeVariablesRange(max) {
   let range = '';
   for (let i = 1; i <= max; i += 1) {
@@ -52,11 +57,14 @@ function makeVariablesRange(max) {
   return range;
 }
 
+/**
+ * Creates a user
+ * @param user {User} - the user object to insert into the database
+ */
 function createUser(user, cb) {
-  const schema = user.constructor.schema;
   // Order of keys isn't guaranteed, so establish
   // order here
-  const keys = Object.keys(schema);
+  const keys = Object.keys(user);
   const values = keys.map(key => user[key]);
   db.query(`
     INSERT into users(
@@ -73,23 +81,23 @@ function updateUser(id, user) {
   return new Promise((resolve, reject) => {
     db.query(`
       UPDATE users SET (
-        ${Object.keys(options).join(',')}
+        ${Object.keys(user).join(',')}
       ) = ($1, $2, $3, $4, $5, $6)
       WHERE id = $7
       RETURNING *;
     `, [
-      options.username,
-      options.password,
-      options.schoology_oauth_token,
-      options.schoology_oauth_token_secret,
-      options.schoology_access_token_key,
-      options.schoology_access_token_secret,
+      user.username,
+      user.password,
+      user.schoology_oauth_token,
+      user.schoology_oauth_token_secret,
+      user.schoology_access_token_key,
+      user.schoology_access_token_secret,
       id,
     ], (err, result) => {
       if (err) {
         return reject(err);
       }
-      resolve(result.rows[0]);
+      return resolve(result.rows[0]);
     });
   });
 }
@@ -107,7 +115,7 @@ function getUserById(id, cb) {
         return reject(err);
       }
       const user = Object.assign({}, result.rows[0]);
-      resolve(user);
+      return resolve(user);
     });
   });
 }
@@ -116,7 +124,7 @@ module.exports = {
   dropTable,
   createTable,
   createUser,
-  showUsers,
+  showRows,
   getUserById,
   updateUser,
   schemaToQuery,
